@@ -19,6 +19,15 @@ public class Club implements IClub{
 		members = new ArrayList<Member>();
 		facilities = new HashMap<String, Facility>();
 	}
+
+	public Member getMember(String surname, String firstname, String secondname){
+		for(Member m : members){
+			if(m.getSurName() == surname && m.getSecondName() == secondname && m.getFirstName() == firstname){
+				return m;
+			}
+		}
+		return null;
+	}
 	
 	public void addMember(String surname, String firstname, String secondname) {
 		currentNumber++;

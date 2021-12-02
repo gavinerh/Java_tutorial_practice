@@ -28,6 +28,14 @@ public class Facility {
 		}
 	}
 
+	@Override
+	public boolean equals(Object o){
+		Facility f = (Facility) o;
+		if (!this.name.equals(f.getName())) return false;
+		if (!this.description.equals(f.getDescription())) return false;
+		return true;
+	}
+
 
 		
 }

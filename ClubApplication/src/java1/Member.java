@@ -35,6 +35,13 @@ public class Member extends Person implements Comparable {
 	}
 
 	@Override
+	public boolean equals(Object o){
+		Member m = (Member) o;
+		if (this.memberNumber != m.getMemberNumber()) return false;
+		return true;
+	}
+
+	@Override
 	public String toString() {
 		return super.toString() + " " + memberNumber;
 	}
