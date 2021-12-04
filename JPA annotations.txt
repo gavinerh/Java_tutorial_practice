@@ -1,0 +1,69 @@
+Making a class an entity:
+@Entity
+
+Naming a specific column
+@Column(name="<any name>")
+
+Setting an column to be an primary key
+@Id
+
+Generate the index of the primary key
+- for identity: require auto increment property to be set in mysql
+@GeneratedValue(strategy = GenerationType.IDENTITY)
+
+Create a name for the table instead of default class name
+@Table(name="<any name>")
+
+
+========================================================
+Managing relationships between Entities
+
+Specifying one-to-one: specified above the attribute name
+@OneToOne
+@OneToOne(mappedBy="<name specified in owner class>")
+
+==================================
+Joining tables: specified above the attribute name
+@JoinColumn(name="<name specified for the table>", referencedColumnName="<name specified in foreign table>")
+
+// Persist the inverse side first, before persisting the owning side
+
+=================================
+Specifying One-to-many or Many-to-one: specified above the attribute name:
+
+@ManyToOne : normally used for owner table, manytoone is for owner
+@OneToMany(mappedBy="<name specified in owner table>")
+
+
+=================================
+Specifying ManyToMany relationships:
+
+- Similar to the other relationships when specifying the owner and inverse tables
+- when specifying the merged table names in the owner class, use the:
+@JoinTable(name="lecturer_module", 
+@joinColumns=@JoinColumn(name="lecturer_id"),
+@inverseJoinColumns=@joinColumn(name="module_id"))
+- for inverse class, just need to specify
+@ManyToMany(mappedBy="<name specified in owner table>")
+
+
+
+============================
+Mapping superclasses:
+@MappedSuperclass
+
+Mapping inherited class: like every other classes
+@Entity
+
+
+===========================
+Cascade: to automatically propagate an action to an entity object to other objects with relationships with it
+- take an example for OneToOne relationships, declare the cascade property in the owners class
+@OneToOne(cascade=CascadeType.PERSIST)
+
+Queries with join
+if the class contain another class attribute that is a list collection, then you need join
+select s from student s join s.modules m where m.code = :modcode
+
+if not a collection reference, then
+select s from student s where s.department = :deptCode
