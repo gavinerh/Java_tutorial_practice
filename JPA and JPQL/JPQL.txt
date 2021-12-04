@@ -1,0 +1,80 @@
+Using JPQL to make complex query
+
+Queries with limited results
+
+String q = "Select s from Student s";
+List<Student> em.createQuery(q).setFirstResult(2).setMaxResults(3).getResultList();
+
+=========================================================
+Queries with Ordering
+
+String q = "Select s from Student s ORDER BY s.name";
+List<Student> em.createQuery(q).getResultList();
+
+==========================================================
+Queries with Filtering
+
+String q = "SELECT s FROM Student s WHERE s.metricNo LIKE '%C" + 
+		" OR s.metricNo LIKE %E";
+List<Student> em.createQuery(q).getResultList();
+
+============================================================
+Single Result Queries
+
+String q = "SELECT s FROM Student s WHERE s.id = " + id;
+stud = (Student) em.createQuery(q).getSingleResult();
+
+=========================================================
+Typed Queries : Avoid casting, add the Student.class in the createQuery
+
+String q = "SELECT s FROM Student s where s.id = " + id;
+TypedQuery<Student> typedQuery = em.createQuery(q, Student.class);
+typedQuery.getSingleResult();
+
+=========================================================
+Dynamic Queries: to prevent sql injection
+
+String q = "SELECT s FROM Student s WHERE s.id = :sid";
+em.createQuery(q, Student.class).setParameter("sid", id).getSingleResult();
+
+=========================================================
+Queries with multiple entities: for attributes that are not collections
+
+String q = "SELECT s FROM Student s 
+		WHERE s.name LIKE '%man%'
+		AND s.department.name = 'DC'";
+
+========================================================
+Queries with multiple entities: for attributes that are collections
+
+String q = "SELECT s.name, s.department.name FROM Student s
+		JOIN s.modules m
+		WHERE m.code = :modCode";
+em.createQuery(q, Student.class)
+	.setParameter("modCode", moduleCode)
+	.getResultList();
+
+========================================================
+Queries with aggregation: returned object is of different types
+
+String q = "SELECT d.name, COUNT(s), AVG(s.cap)
+		FROM Department d
+		JOIN d.students s
+		GROUP BY d";
+results = em.createQuery(q).getResultList();
+
+for (Iterator i = results.iterator(); i.hasNext();) {
+Object[] values = (Object[]) i.next();
+for (int j = 0; j < values.length; j++)
+System.out.print(values[j] + " ");
+System.out.println();
+
+==========================================================
+Queries with aggregation: Having clause
+
+String q = "SELECT d.name, COUNT(s), MAX(s.cap)
+		FROM Department d
+		JOIN d.students s
+		GROUP BY d
+		HAVING COUNT(s) >= 5;
+em.createQuery(q).getResultList();
