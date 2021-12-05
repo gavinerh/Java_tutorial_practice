@@ -75,7 +75,7 @@ public class StreamWshop {
         // order (least salary first) and print out
         // each staff object
         // You may need to add necessary methods
-        // to Staff classcd 
+        // to Staff classcd
         System.out.println("\n[Exercise 5: Sort]");
         staffList.stream()
                 .sorted(Comparator
