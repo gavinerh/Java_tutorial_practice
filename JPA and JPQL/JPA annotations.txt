@@ -40,9 +40,9 @@ Specifying ManyToMany relationships:
 
 - Similar to the other relationships when specifying the owner and inverse tables
 - when specifying the merged table names in the owner class, use the:
-@JoinTable(name="lecturer_module", 
-@joinColumns=@JoinColumn(name="lecturer_id"),
-@inverseJoinColumns=@joinColumn(name="module_id"))
+@JoinTable(name="student_module",
+			joinColumns=@JoinColumn(name="student_id"),
+			inverseJoinColumns=@JoinColumn(name="module_id"))
 - for inverse class, just need to specify
 @ManyToMany(mappedBy="<name specified in owner table>")
 
