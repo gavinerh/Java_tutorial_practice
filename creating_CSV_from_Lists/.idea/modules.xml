@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/FunctionalProgramming.iml" filepath="$PROJECT_DIR$/FunctionalProgramming.iml" />
+      <module fileurl="file://$PROJECT_DIR$/creating_CSV_from_Lists.iml" filepath="$PROJECT_DIR$/creating_CSV_from_Lists.iml" />
     </modules>
   </component>
 </project>
