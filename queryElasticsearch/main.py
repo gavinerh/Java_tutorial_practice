@@ -1,9 +1,9 @@
 import json
 
 import requests
+import datetime
 
-
-def search(uri):
+def search(uri, timeNow, earlierTime):
     query = json.dumps({
         "size":10000,
         "query" : {
@@ -17,8 +17,8 @@ def search(uri):
                     {
                         "range" : {
                             "timestamp": {
-                                "gt": "2022-03-28 00:00:00.000",
-                                "lt": "2022-04-18 00:00:00.000"
+                                "gt": earlierTime,
+                                "lt": timeNow
                             }
                         }
                     }
@@ -30,6 +30,21 @@ def search(uri):
     response = requests.get(uri, data=query, headers={"Content-Type":"application/json"})
     results = json.loads(response.text)
     return results
+
+def generateTimeStr(time):
+    timeStr = str(time)
+    arr = timeStr.split(".")
+    truncated = arr[0]
+    truncated += ".000"
+    return truncated
+
+def generateTimeRange():
+    now = datetime.datetime.now()
+    diff = datetime.timedelta(minutes=5)
+    past = now - diff
+    now = generateTimeStr(now)
+    past = generateTimeStr(past)
+    return [now, past]
 
 def exportToCSV(res, title):
     with open('C:\\Users\\gavin\\OneDrive\\Desktop\\logFile\\logs.csv', 'w') as f:
@@ -53,7 +68,8 @@ def createCSVString(response):
     return response
 
 url = "http://localhost:9200/graylog_0/_search"
-response = search(url)
+timeRange = generateTimeRange()
+response = search(url, timeRange[0], timeRange[1])
 response = createCSVString(response['hits']['hits'])
 # print(response[0])
 title = "\"Source\",\"Message\",\"Priority\",\"Source IP\",\"Destination IP\",\"Timestamp\""
