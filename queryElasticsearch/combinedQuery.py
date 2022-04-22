@@ -4,7 +4,7 @@ import requests
 import datetime
 import pandas as pd
 
-# function to query the elasticsearch api
+# Query the elasticsearch api
 def search(uri, timeNow, earlierTime):
     query = json.dumps({
         "size":10000,
@@ -19,8 +19,8 @@ def search(uri, timeNow, earlierTime):
                     {
                         "range" : {
                             "timestamp": {
-                                "gt": earlierTime,
-                                "lt": timeNow
+                                "gt": "2022-04-15 00:00:00.000",
+                                "lt": "2022-04-20 00:00:00.000"
                             }
                         }
                     }
@@ -33,6 +33,7 @@ def search(uri, timeNow, earlierTime):
     results = json.loads(response.text)
     return results
 
+# Convert datetime object to a string
 def generateTimeStr(time):
     timeStr = str(time)
     arr = timeStr.split(".")
@@ -40,6 +41,7 @@ def generateTimeStr(time):
     truncated += ".000"
     return truncated
 
+# Generate time range to query the elasticsearch api
 def generateTimeRange():
     now = datetime.datetime.now()
     diff = datetime.timedelta(minutes=5)
@@ -48,8 +50,9 @@ def generateTimeRange():
     past = generateTimeStr(past)
     return [now, past]
 
+# Export response string to a csv
 def exportToCSV(res, title):
-    with open('/home/docker/graylog/logfiles/logs.csv', 'w') as f:
+    with open('C:\\Users\\ASUS\\Desktop\\logFiles\\logs.csv', 'w') as f:
         f.write(title)
         f.write('\n')
         for s in res:
@@ -57,9 +60,9 @@ def exportToCSV(res, title):
             f.write('\n')
         f.close()
     return
-
+# Generate string from response object
 def createCSVString(response):
-    index = 0;
+    index = 0
     while index < len(response):
         timestamp = response[index]['_source']['timestamp']
         message = response[index]['_source']['message'].replace('] ', ',')
@@ -69,7 +72,7 @@ def createCSVString(response):
         index+=1
     return response
 
-# function that checks if current collected logs are within the classification identified
+# Checks if current collected logs are within the classification identified
 def checkSimilar(arr, log):
     if(len(arr) == 0):
         return None
@@ -79,25 +82,57 @@ def checkSimilar(arr, log):
            count += 1
     return count != 0
 
-# function that reads the stored classification file
+# Reads the stored classification file
 def readStoredClassification():
     content = ""
     # if the csv is not empty continue with reading the stored classification file
-    with open("/home/docker/graylog/logfiles/log_classification.txt") as f:
-        content = f.readlines()
+    try:
+        with open("C:\\Users\\ASUS\\Desktop\\logFiles\\log_classification.txt") as f:
+            content = f.readlines()
+    except FileNotFoundError:
+        print("File not found or created yet")
+        return []
     arr = []
     for line in content:
         arr.append(line)
     return arr
 
-# function that analyse the csv to generate unique messages from message column
+# Save new messages into classification file
+def populateClassificationFile(messages):
+    with open('C:\\Users\\ASUS\\Desktop\\logFiles\\log_classification.txt', 'w') as f:
+        for s in messages:
+            f.write(s)
+            f.write('\n')
+        f.close()
+
+# Create email notification
+def generateEmailNotification(messages):
+    content = "";
+    for i in range(len(messages)):
+        content += "\n"
+        content += str(i+1) + ". "
+        content += messages[i]
+        content += "\n"
+    url = "http://localhost:8080/mail"
+    time = generateTimeStr(datetime.datetime.now())
+    query = {
+        "datetime":time,
+        "content":content
+    }
+    response = requests.post(url=url, json=query)
+    print(response)
+
+# Analyse the csv to generate unique messages from message column
 def analyse():
-    df = pd.read_csv('/home/docker/graylog/logfiles/logs.csv')
+    df = pd.read_csv('C:\\Users\\ASUS\\Desktop\\logFiles\\logs.csv')
     if(len(df) == 0):
         return
+    messages = df["Message"].unique()
     # get stored classification
     arr = readStoredClassification()
     if len(arr) == 0:
+        populateClassificationFile(messages)
+        generateEmailNotification(messages)
         # the fresh csv file should not be empty at this stage
         # for now, we will add it to the stored classification file, and trigger email
         # later we will trigger email, then let user read email and trigger
@@ -108,9 +143,14 @@ def analyse():
         # trigger email and storage,
         # if true returned, then ignore and return
         # storage of new classification
-
-
-
+        toStore = []
+        for s in messages:
+            if checkSimilar(arr, s) != True:
+                toStore.append(s)
+        populateClassificationFile(toStore)
+        generateEmailNotification(toStore)
+        print("New messages stored")
+    return
 
 # query elasticsearch using a set timerange
 url = "http://localhost:9200/graylog_0/_search"
@@ -128,3 +168,4 @@ exportToCSV(response[:-10], title) # remove unformatted lines
 print("Csv created")
 
 # analyse the csv file using pandas library
+analyse()
