@@ -19,8 +19,8 @@ def search(uri, timeNow, earlierTime):
                     {
                         "range" : {
                             "timestamp": {
-                                "gt": "2022-04-15 00:00:00.000",
-                                "lt": "2022-04-20 00:00:00.000"
+                                "gt": earlierTime,
+                                "lt": timeNow
                             }
                         }
                     }
