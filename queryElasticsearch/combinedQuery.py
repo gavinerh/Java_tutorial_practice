@@ -44,15 +44,15 @@ def generateTimeStr(time):
 # Generate time range to query the elasticsearch api
 def generateTimeRange():
     now = datetime.datetime.now()
-    diff = datetime.timedelta(minutes=5)
+    diff = datetime.timedelta(minutes=10)
     past = now - diff
     now = generateTimeStr(now)
     past = generateTimeStr(past)
     return [now, past]
 
 # Export response string to a csv
-def exportToCSV(res, title):
-    with open('C:\\Users\\ASUS\\Desktop\\logFiles\\logs.csv', 'w') as f:
+def exportToCSV(res, title, csvfile):
+    with open(csvfile, 'w') as f:
         f.write(title)
         f.write('\n')
         for s in res:
@@ -83,11 +83,11 @@ def checkSimilar(arr, log):
     return count != 0
 
 # Reads the stored classification file
-def readStoredClassification():
+def readStoredClassification(classificationFile):
     content = ""
     # if the csv is not empty continue with reading the stored classification file
     try:
-        with open("C:\\Users\\ASUS\\Desktop\\logFiles\\log_classification.txt") as f:
+        with open(classificationFile) as f:
             content = f.readlines()
     except FileNotFoundError:
         print("File not found or created yet")
@@ -98,8 +98,8 @@ def readStoredClassification():
     return arr
 
 # Save new messages into classification file
-def populateClassificationFile(messages):
-    with open('C:\\Users\\ASUS\\Desktop\\logFiles\\log_classification.txt', 'w') as f:
+def populateClassificationFile(messages, classificationFile):
+    with open(classificationFile, 'w') as f:
         for s in messages:
             f.write(s)
             f.write('\n')
@@ -123,15 +123,15 @@ def generateEmailNotification(messages):
     print(response)
 
 # Analyse the csv to generate unique messages from message column
-def analyse():
-    df = pd.read_csv('C:\\Users\\ASUS\\Desktop\\logFiles\\logs.csv')
+def analyse(csvfile, classificationFile):
+    df = pd.read_csv(csvfile)
     if(len(df) == 0):
         return
     messages = df["Message"].unique()
     # get stored classification
-    arr = readStoredClassification()
-    if len(arr) == 0:
-        populateClassificationFile(messages)
+    fileContentArr = readStoredClassification(classificationFile)
+    if len(fileContentArr) == 0:
+        populateClassificationFile(messages, classificationFile)
         generateEmailNotification(messages)
         # the fresh csv file should not be empty at this stage
         # for now, we will add it to the stored classification file, and trigger email
@@ -145,7 +145,7 @@ def analyse():
         # storage of new classification
         toStore = []
         for s in messages:
-            if checkSimilar(arr, s) != True:
+            if checkSimilar(fileContentArr, s) != True:
                 toStore.append(s)
         populateClassificationFile(toStore)
         generateEmailNotification(toStore)
@@ -155,17 +155,19 @@ def analyse():
 # query elasticsearch using a set timerange
 url = "http://localhost:9200/graylog_0/_search"
 timeRange = generateTimeRange()
+print(timeRange[0] + "\n" + timeRange[1])
 response = search(url, timeRange[0], timeRange[1])
 print("Returned response length: " + str(len(response['hits']['hits'])))
 
 # create csv string from response
+csvfile = "/home/docker/graylog/logfiles/logs.csv"
 response = createCSVString(response['hits']['hits'])
-# print(response[0])
 title = "\"Source\",\"Message\",\"Priority\",\"Source IP\",\"Destination IP\",\"Timestamp\""
 
 # save the query string into csv file
-exportToCSV(response[:-10], title) # remove unformatted lines
+exportToCSV(response, title, csvfile) # remove unformatted lines
 print("Csv created")
 
 # analyse the csv file using pandas library
-analyse()
+classificationFile = "/home/docker/graylog/logfiles/classificationFile.txt"
+analyse(csvfile, classificationFile)
