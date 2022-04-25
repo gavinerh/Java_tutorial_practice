@@ -44,10 +44,11 @@ def generateTimeStr(time):
 # Generate time range to query the elasticsearch api
 def generateTimeRange():
     now = datetime.datetime.now()
-    diff = datetime.timedelta(minutes=10)
-    past = now - diff
-    now = generateTimeStr(now)
-    past = generateTimeStr(past)
+    zone_diff = datetime.timedelta(hours=8)
+    actual_now = now - zone_diff
+    diff = datetime.timedelta(minutes=30)
+    now = generateTimeStr(actual_now)
+    past = generateTimeStr(actual_now - diff)
     return [now, past]
 
 # Export response string to a csv
@@ -78,9 +79,11 @@ def checkSimilar(arr, log):
         return None
     count = 0
     for s in arr:
+        # if the log is already present
         if s == log:
            count += 1
-    return count != 0
+    print(count == 0)
+    return count == 0
 
 # Reads the stored classification file
 def readStoredClassification(classificationFile):
@@ -99,8 +102,11 @@ def readStoredClassification(classificationFile):
 
 # Save new messages into classification file
 def populateClassificationFile(messages, classificationFile):
-    with open(classificationFile, 'w') as f:
+    if(len(messages) == 0):
+        return
+    with open(classificationFile, 'a') as f:
         for s in messages:
+            print(s)
             f.write(s)
             f.write('\n')
         f.close()
@@ -146,16 +152,17 @@ def analyse(csvfile, classificationFile):
         toStore = []
         for s in messages:
             if checkSimilar(fileContentArr, s) != True:
+                print(s)
                 toStore.append(s)
-        populateClassificationFile(toStore)
-        generateEmailNotification(toStore)
-        print("New messages stored")
+        if len(toStore) != 0:
+            populateClassificationFile(toStore, classificationFile)
+            generateEmailNotification(toStore)
+#        print("New messages stored")
     return
 
 # query elasticsearch using a set timerange
 url = "http://localhost:9200/graylog_0/_search"
 timeRange = generateTimeRange()
-print(timeRange[0] + "\n" + timeRange[1])
 response = search(url, timeRange[0], timeRange[1])
 print("Returned response length: " + str(len(response['hits']['hits'])))
 
