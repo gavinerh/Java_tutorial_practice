@@ -77,13 +77,11 @@ def createCSVString(response):
 def checkSimilar(arr, log):
     if(len(arr) == 0):
         return None
-    count = 0
     for s in arr:
         # if the log is already present
-        if s == log:
-           count += 1
-    print(count == 0)
-    return count == 0
+        if s[:-1] == log:
+           return True
+    return False
 
 # Reads the stored classification file
 def readStoredClassification(classificationFile):
@@ -152,12 +150,11 @@ def analyse(csvfile, classificationFile):
         toStore = []
         for s in messages:
             if checkSimilar(fileContentArr, s) != True:
-                print(s)
                 toStore.append(s)
         if len(toStore) != 0:
             populateClassificationFile(toStore, classificationFile)
             generateEmailNotification(toStore)
-#        print("New messages stored")
+            print("New messages stored")
     return
 
 # query elasticsearch using a set timerange
