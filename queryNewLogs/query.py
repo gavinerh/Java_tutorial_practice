@@ -32,15 +32,6 @@ def search(uri, timeNow, earlierTime, searchQuery):
     results = json.loads(response.text)
     return results
 
-# write response into csv file
-def exportToCSV(res,  csvfile):
-    with open(csvfile, 'w') as f:
-        for s in res:
-            f.write(s)
-            f.write('\n')
-        f.close()
-    return
-
 # create classification buckets
 def createBuckets(responseStr):
     # extract the folder and file name
@@ -55,7 +46,8 @@ def populateDictionay(dict, response, filename):
     if (filename not in dict):
         dict[filename] = []
     else:
-        dict[filename] = response
+        # edit later to append
+        dict[filename].append(response)
     return dict
 
 # sort response into individual buckets
@@ -76,29 +68,35 @@ def createCSVString(response):
 
 def dumpToFiles(mydict):
     for k in mydict.keys():
+        newDict = {}
         # loop through keys
         with open(k, 'w') as f:
             for s in mydict[k]:
-                f.write(s)
-                f.write('\n')
+                if s not in newDict:
+                    newDict[s] = 1
+                    f.write(s)
+                    f.write('\n')
         f.close()
     return
 
 #search elasticsearch for jmpadm related fields
 uri = "http://localhost:9200/graylog_0/_search"
-timeNow = "2022-05-09 00:00:00.000"
-earlierTime = "2022-05-06 00:00:00.000"
+timeNow = "2022-05-10 00:00:00.000"
+earlierTime = "2022-05-07 00:00:00.000"
 searchQuery = "jmpadm"
 response = search(uri, timeNow, earlierTime, searchQuery)
-print("Returned response length: " + str(len(response['hits']['hits'])))
-
+print("Returned response length for " + searchQuery + ": " + str(len(response['hits']['hits'])))
 # preprocess response string and generate dict of filenames as key
 mydict = createCSVString(response['hits']['hits'])
-
 # generate files for the earlier classification
 dumpToFiles(mydict)
 
-# save the query string into csv file
-csvfile = "C:\\Users\\gavin\\OneDrive\\Desktop\\graylog\\logs\\jmpadm.csv"
-exportToCSV(response[:-1], csvfile)
-print("csv created for jmpadm logs")
+# query guacamole
+searchQuery = "guacamole"
+response = search(uri, timeNow, earlierTime, searchQuery)
+print("Returned response length for " + searchQuery + ": " + str(len(response['hits']['hits'])))
+# preprocess response string and generate dict of filenames as key
+mydict = createCSVString(response['hits']['hits'])
+print(len(mydict))
+# generate files for the earlier classification
+dumpToFiles(mydict)
