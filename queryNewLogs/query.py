@@ -3,6 +3,7 @@ import datetime
 import pandas as pd
 import json
 import re
+import os
 
 # Query elasticsearch api
 def search(uri, timeNow, earlierTime, searchQuery):
@@ -37,6 +38,7 @@ def createBuckets(responseStr):
     # extract the folder and file name
     arr = responseStr.split(' ')
     folder = arr[0]
+    arr[1] = arr[1][:-1]
     file = arr[1]
     return "/home/docker/graylog/logfiles/" + folder + "/" + file
 
@@ -45,9 +47,7 @@ def createBuckets(responseStr):
 def populateDictionay(dict, response, filename):
     if (filename not in dict):
         dict[filename] = []
-    else:
-        # edit later to append
-        dict[filename].append(response)
+    dict[filename].append(response)
     return dict
 
 # sort response into individual buckets
@@ -66,17 +66,43 @@ def createCSVString(response):
         index+=1
     return myDict
 
+# cleanse logs of certain less important information
+def remove_unimportant(log):
+    chars = ["Message of the Day", "Day", "Finished Cleanup of Temporary Directories", "Daily", "daily", "anacron"]
+    contains_char = False
+    for char in chars:
+        if char in log:
+            contains_char = True
+            break
+    return contains_char
+
+# remove duplicates
+def cleanse_logs(mydict, k):
+    newDict = {}
+    for s in mydict[k]:
+        # remove logs containing less important information
+        if remove_unimportant(s):
+            continue
+        if s not in newDict:
+            newDict[s] = 1
+    return newDict
+
+# write to file
+def writeToFile(path, newDict, writeMethod):
+    f = open(path, writeMethod)
+    for s in newDict.keys():
+        f.write(s)
+        f.write('\n')
+    f.close()
+
 def dumpToFiles(mydict):
+    path = "/home/docker/graylog/logfiles/combined/logs"
     for k in mydict.keys():
-        newDict = {}
-        # loop through keys
-        with open(k, 'w') as f:
-            for s in mydict[k]:
-                if s not in newDict:
-                    newDict[s] = 1
-                    f.write(s)
-                    f.write('\n')
-        f.close()
+        newDict = cleanse_logs(mydict, k)
+        # write to individual categorical file
+       # writeToFile(k, newDict, 'w')
+        # write to combined file
+        writeToFile(path, newDict, 'a')
     return
 
 #search elasticsearch for jmpadm related fields
