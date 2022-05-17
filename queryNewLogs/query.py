@@ -89,40 +89,54 @@ def cleanse_logs(mydict, k):
 
 # write to file
 def writeToFile(path, newDict, writeMethod):
-    f = open(path, writeMethod)
-    for s in newDict.keys():
-        f.write(s)
-        f.write('\n')
-    f.close()
+    f = None
+    f1 = None
+    try:
+        f = open(path, writeMethod)
+        for s in newDict.keys():
+            f.write(s)
+            f.write('\n')
+    except:
+        f1 = open("/home/docker/graylog/logfiles/error", 'a')
+        for s in newDict.keys():
+            f1.write("Path: " + path + "\n")
+            f1.write("Message: " + s + "\n")
+    finally:
+        if f is not None:
+            f.close()
+        if f1 is not None:
+            f1.close()
 
 def dumpToFiles(mydict):
-    path = "/home/docker/graylog/logfiles/combined/logs"
+    path = "/home/docker/graylog/logfiles/combined/logs-all"
     for k in mydict.keys():
         newDict = cleanse_logs(mydict, k)
         # write to individual categorical file
-       # writeToFile(k, newDict, 'w')
+        writeToFile(k, newDict, 'w')
         # write to combined file
         writeToFile(path, newDict, 'a')
     return
 
 #search elasticsearch for jmpadm related fields
 uri = "http://localhost:9200/graylog_0/_search"
-timeNow = "2022-05-10 00:00:00.000"
-earlierTime = "2022-05-07 00:00:00.000"
+timeNow = "2022-05-17 07:00:00.000"
+earlierTime = "2022-05-15 00:00:00.000"
 searchQuery = "jmpadm"
 response = search(uri, timeNow, earlierTime, searchQuery)
 print("Returned response length for " + searchQuery + ": " + str(len(response['hits']['hits'])))
 # preprocess response string and generate dict of filenames as key
 mydict = createCSVString(response['hits']['hits'])
+#print(mydict)
 # generate files for the earlier classification
 dumpToFiles(mydict)
 
 # query guacamole
+# check for exception when using configuration files in future
 searchQuery = "guacamole"
 response = search(uri, timeNow, earlierTime, searchQuery)
 print("Returned response length for " + searchQuery + ": " + str(len(response['hits']['hits'])))
 # preprocess response string and generate dict of filenames as key
 mydict = createCSVString(response['hits']['hits'])
-print(len(mydict))
+# print(len(mydict))
 # generate files for the earlier classification
 dumpToFiles(mydict)
