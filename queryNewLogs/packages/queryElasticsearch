@@ -1,0 +1,40 @@
+import json
+import requests
+
+class QueryElasticsearch:
+    def __init__(self, uri, timeNow, earlierTime):
+        self.uri = uri
+        self.timeNow = timeNow
+        self.earlierTime = earlierTime
+
+    # query elasticsearch api
+    def search(self, searchQuery):
+        query = json.dumps({
+            "size":10000,
+            "query" : {
+                "bool": {
+                    "must": [
+                        {
+                            "match_phrase": {
+                                "message": searchQuery
+                            }
+                        },
+                        {
+                            "range" : {
+                                "timestamp": {
+                                    "gt": self.earlierTime,
+                                    "lt": self.timeNow
+                                }
+                            }
+                        }
+                    ]
+                }
+            }
+        })
+        response = requests.get(self.uri, data=query, headers={"Content-Type":"application/json"})
+        results = json.loads(response.text)
+        return results
+
+    # returns the list of response objects
+    def cleaned_objects(self, response):
+        return response['hits']['hits']
